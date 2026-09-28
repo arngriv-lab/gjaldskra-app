@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="is">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gjaldskra - online</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<style>
+body{font-family:Arial,sans-serif;margin:0;padding:10px;background:#e8eaed}
+h1{font-size:17px}.sub{font-size:12px;color:#555}
+.top{background:#fff;border:2px solid #999;padding:8px;margin-bottom:10px}
+.top input{width:100%;padding:8px;border:1px solid #999;background:#d9d9d9;box-sizing:border-box;margin:2px 0 6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+.sec{background:#fff;border:2px solid #999;margin-bottom:10px}
+.sec h2{font-size:13px;margin:0;padding:6px;background:#bfbfbf;border-bottom:2px solid #999}
+.hrow,.rrow{display:grid;grid-template-columns:1fr 46px 36px 96px;font-size:12px;align-items:center}
+.hrow{background:#e7e6e6;font-weight:700;border-bottom:1px solid #999}
+.rrow{border-bottom:1px solid #ddd}
+.grey{display:flex;align-items:center;justify-content:space-between;background:#d9d9d9;padding:2px}
+.grey button{width:28px;height:28px;border:1px solid #777;background:#fff;cursor:pointer}
+.grey button.plus{background:#111;color:#fff}
+.cnt{font-weight:800;min-width:24px;text-align:center}
+.big{width:100%;padding:13px;font-weight:800;margin:6px 0;border:1px solid #111;cursor:pointer}
+#dl{background:#0a7a3f;color:#fff;border-color:#0a7a3f}#calc{background:#111;color:#fff}
+.auth{background:#fff;border:2px solid #111;padding:8px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<h1>Reikningur - talning online</h1>
+<p class="sub">Template kemur úr Supabase Storage. Gráir reitir = F og O.</p>
+<div class="auth">
+<div id="authStatus">Not logged in</div>
+<input id="email" placeholder="email"><input id="pass" type="password" placeholder="password">
+<button id="btnIn">Log in</button> <button id="btnUp">Sign up</button> <button id="btnOut">Log out</button>
+</div>
+<div id="app" style="opacity:.4;pointer-events:none">
+<div class="top">
+<div id="tplStatus">Loading template from Storage...</div>
+Mánuður (YYYY-MM)<input id="period" value="2026-09">
+Heilsugæslustöð (B3)<input id="fStod">
+Tímabil (D2)<input id="fPer" placeholder="05.05.-05.06.2026">
+Nafn (K2)<input id="fName">Kt. (K3)<input id="fKt">
+<button class="big" id="calc">Reikna</button>
+<button class="big" id="dl">Download filled copy - sama layout</button>
+<button class="big" id="rst">Reset month</button>
+<div id="out">Log in first.</div>
+<h3>Bæta við / breyta röð - editable</h3>
+Taxti<input id="cCode" placeholder="t.d. 7.21"> Lýsing<input id="cLabel" placeholder="Nafn"> Ein.<input id="cUnits" placeholder="12"> Side left/right<input id="cSide" value="left">
+<button id="cAdd">Vista röð</button> <button id="cDel">Eyða röð</button>
+<p class="sub">Breytingar vistast á þér í Supabase. Til að breyta föstum texta varanlega: breyttu EDIT HERE block í index.html á GitHub.</p>
+</div>
+<div class="grid"><div id="left"></div><div id="right"></div></div>
+</div>
+<script>
+// ===== EDIT HERE =====
+// Breyttu nöfnum / einingum hér á GitHub ef þarf. Þessar línur eru sjálfgefnar.
+const SUPA_URL="https://szakeawnkzxhmfvhxvhj.supabase.co";
+const SUPA_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6YWtlYXdua3p4aG1mdmh4dmhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjY5ODgsImV4cCI6MjEwNjIwMjk4OH0.w7h02gfAMc28-kml4Vkrdk-n2iGp3LvIhmQXUfAfHho";
+const BUCKET="templates", TPL_PATH="Gjaldskrarverk_base.xlsx";
+const LEFT=[
+{title:"I. Viðtöl og vitjanir",items:[["104","Viðtal og skoðun sérfræðings",19.5],["112","Vitjun sérfræðings",33],["131","Dvöl >30 mín",12],["141","Ferð m. sjúkl.",12],["151","Endurlífgun",100],["152","Slysahjálp",100]]},
+{title:"1 Augnlækningar",items:[["1.3","Skoðun með slitlampa",10],["1.4","Aðskotahlutur úr glæru",15],["1.5","Skolun á auga",15]]},
+{title:"2 Geðlækningar",items:[["2.1","Geðviðtal 20 mín",20],["2.2","Geðviðtal 45 mín",35]]},
+{title:"3 HNE-lækningar",items:[["3.1","Smásjárskoðun á miðeyra",4],["3.2","Stapedius viðbragð",4],["3.4","Aðskotahl. úr nefi, eyra, koki",4],["3.5","Heyrnarpróf",8],["3.6","Nef stíflað",10],["3.7","Svimapróf",10],["3.11","Nefslímhúð brennd",12]]},
+{title:"5 Kvenlækningar",items:[["5.2","Gynskoðun",10],["5.4","Settur þvagleggur, kona",12]]},
+{title:"6 Lyflækningar",items:[["6.1","Inndæling í vöðva",8],["6.3","Innúðalyf",10],["6.4","Liðástunga",10],["6.5","Infusion",10]]},
+{title:"7 Skurðlækningar",items:[["7.1","Brunasár",9],["7.2","Litlir liðir",10],["7.3","Umbúðir brot",10],["7.6","Skorið inn á æð",20],["7.9","Leggur karl",28],["7.11","Ígerð",12],["7.12","Saumað sár",12],["7.13","Vörtur 1-3",12],["7.14","Nögl",12],["7.16","Königs",19],["7.18","Aðskotahl. djúpt",30],["7.19","Stór liður",30],["7.20","Gips",50]]}
+];
+const RIGHT=[
+{title:"8 Svæfingar",items:[["8.1","Minni staðdeyfing",8],["8.2","Minni leiðslud.",8],["8.4","Medianus/ulnaris",20]]},
+{title:"9 Taugalækningar",items:[["9.1","Álag tauga",15]]},
+{title:"10 Rannsóknir",items:[["10.2","Hb",4],["10.3","Blóðsykur",4],["10.4","CRP",4],["10.8","Þvag",5],["10.12","Þungunarpróf",6],["10.13","Hálsstrok",4],["10.14","Hjartalínurit",6.5]]}
+];
+// ===== END EDIT =====
+const sb=window.supabase.createClient(SUPA_URL,SUPA_ANON);
+let C={}, tplBytes=null, user=null, customs=[];
+function period(){return document.getElementById("period").value.trim();}
+function allSections(){
+let L=JSON.parse(JSON.stringify(LEFT)), R=JSON.parse(JSON.stringify(RIGHT));
+customs.forEach(c=>{
+let arr=c.side==="right"?R:L;
+let s=arr.find(x=>x.title==="Viðbót"); if(!s){s={title:"Viðbót",items:[]};arr.push(s);}
+s.items.push([c.code,c.label,Number(c.units)]);
+});
+return {L,R};
+}
+function build(el,secs){
+el.innerHTML="";
+secs.forEach(s=>{
+let d=document.createElement("div");d.className="sec";
+d.innerHTML="<h2>"+s.title+"</h2><div class='hrow'><div>Lýsing</div><div>Taxti</div><div>Ein.</div><div>Fjöldi</div></div>";
+s.items.forEach(it=>{
+let code=it[0], r=document.createElement("div");r.className="rrow";
+r.innerHTML="<div>"+it[1]+"</div><div>"+code+"</div><div style='text-align:center'>"+it[2]+"</div><div class='grey'><button class='mn'>-</button><span class='cnt'>"+(C[code]||0)+"</span><button class='plus'>+</button></div>";
+r.querySelector(".plus").onclick=()=>change(code,1);
+r.querySelector(".mn").onclick=()=>change(code,-1);
+d.appendChild(r);
+});
+el.appendChild(d);
+});
+}
+function refresh(){let a=allSections();build(document.getElementById("left"),a.L);build(document.getElementById("right"),a.R);}
+async function change(code,d){
+C[code]=Math.max(0,(C[code]||0)+d);refresh();
+if(user) await sb.from("tally_counts").upsert({user_id:user.id,period:period(),code:code,count:C[code]},{onConflict:"user_id,period,code"});
+}
+async function loadAll(){
+let r1=await sb.from("tally_counts").select("code,count").eq("user_id",user.id).eq("period",period());
+C={};(r1.data||[]).forEach(r=>C[r.code]=r.count);
+let r2=await sb.from("job_custom").select("*").eq("user_id",user.id);
+customs=r2.data||[];
+refresh();
+document.getElementById("out").textContent="Loaded "+period();
+loadTemplate();
+}
+async function loadTemplate(){
+try{
+let {data,error}=await sb.storage.from(BUCKET).download(TPL_PATH);
+if(error) throw error;
+tplBytes=new Uint8Array(await data.arrayBuffer());
+document.getElementById("tplStatus").textContent="Template ready from Storage: "+TPL_PATH;
+}catch(e){document.getElementById("tplStatus").textContent="Storage error: "+e.message+" - check bucket/templates upload + policy.";}
+}
+document.getElementById("period").onchange=()=>{if(user)loadAll();};
+document.getElementById("btnIn").onclick=async()=>{let {error}=await sb.auth.signInWithPassword({email:document.getElementById("email").value,password:document.getElementById("pass").value}); if(error)alert(error.message);};
+document.getElementById("btnUp").onclick=async()=>{let {error}=await sb.auth.signUp({email:document.getElementById("email").value,password:document.getElementById("pass").value}); if(error)alert(error.message); else alert("Created - Log in now");};
+document.getElementById("btnOut").onclick=async()=>await sb.auth.signOut();
+sb.auth.onAuthStateChange((e,s)=>{
+user=s?s.user:null;
+document.getElementById("authStatus").textContent=user?("Logged in "+user.email):"Not logged in";
+document.getElementById("app").style.opacity=user?"1":".4";
+document.getElementById("app").style.pointerEvents=user?"auto":"none";
+if(user)loadAll();
+});
+document.getElementById("cAdd").onclick=async()=>{
+let code=document.getElementById("cCode").value.trim(); if(!code)return alert("code missing");
+let rec={user_id:user.id,code:code,label:document.getElementById("cLabel").value||code,units:Number(document.getElementById("cUnits").value)||0,side:document.getElementById("cSide").value||"left"};
+let {error}=await sb.from("job_custom").upsert(rec,{onConflict:"user_id,code"});
+if(error)alert(error.message); else loadAll();
+};
+document.getElementById("cDel").onclick=async()=>{
+let code=document.getElementById("cCode").value.trim(); if(!code)return;
+await sb.from("job_custom").delete().eq("user_id",user.id).eq("code",code);
+loadAll();
+};
+document.getElementById("rst").onclick=async()=>{if(confirm("Reset "+period()+"?")){await sb.from("tally_counts").delete().eq("user_id",user.id).eq("period",period());C={};refresh();}};
+document.getElementById("calc").onclick=()=>{let l=[];Object.keys(C).forEach(k=>{if(C[k]>0)l.push(k+" : "+C[k]);});document.getElementById("out").textContent=l.join("\n")||"All 0";};
+function norm(v){if(v==null)return "";if(typeof v==="object"){if(v.text!==undefined)return String(v.text).trim();if(v.result!==undefined)return String(v.result).trim();if(v.richText)return v.richText.map(x=>x.text).join("").trim();return "";}return String(v).trim();}
+document.getElementById("dl").onclick=async()=>{
+if(!tplBytes)return alert("Template not loaded yet");
+let wb=new ExcelJS.Workbook();await wb.xlsx.load(tplBytes);
+let ws=wb.worksheets[0];
+if(document.getElementById("fPer").value)ws.getCell("D2").value=document.getElementById("fPer").value;
+if(document.getElementById("fStod").value)ws.getCell("B3").value=document.getElementById("fStod").value;
+if(document.getElementById("fName").value)ws.getCell("K2").value=document.getElementById("fName").value;
+if(document.getElementById("fKt").value)ws.getCell("K3").value=document.getElementById("fKt").value;
+ws.eachRow((row)=>{
+let c=norm(row.getCell(3).value), l=norm(row.getCell(12).value);
+if(c&&C.hasOwnProperty(c))row.getCell(6).value=(C[c]||0)===0?null:C[c];
+if(l&&C.hasOwnProperty(l))row.getCell(15).value=(C[l]||0)===0?null:C[l];
+});
+let buf=await wb.xlsx.writeBuffer();
+let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));a.download="gjaldskra-filled-"+period()+".xlsx";a.click();
+};
+refresh();
+</script>
+</body>
+</html>
