@@ -10,17 +10,20 @@
 *{box-sizing:border-box}body{font-family:Arial,system-ui,sans-serif;margin:0;background:#e8eaed;color:#111}
 .sticky{position:sticky;top:0;z-index:10;background:#111;color:#fff;padding:8px 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .sticky input{padding:10px;border-radius:8px;border:1px solid #777;font-size:14px}
-.sticky input[type=search]{flex:1;min-width:135px}
+.toptitle{color:#fff;font-weight:800;font-size:15px;flex:1;min-width:135px;text-align:center}
 .live{background:#fff;color:#111;border-radius:8px;padding:9px;font-size:13px;font-weight:800}
-.monthis{background:#fff;color:#111;border-radius:8px;padding:9px;font-size:13px;font-weight:800;text-transform:capitalize}
 button{cursor:pointer}.sticky button,.green{background:#0a7a3f;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:800}
 button:disabled{opacity:.5;cursor:wait}
-.wrap{max-width:1100px;margin:auto;padding:10px}h1{font-size:19px;margin:10px 0 4px}.small{color:#555;font-size:12px}
+.wrap{max-width:1100px;margin:auto;padding:10px}.small{color:#555;font-size:12px}
 .card,.auth{background:#fff;border:2px solid #999;border-radius:10px;padding:12px;margin:10px 0}.auth{border-color:#333}
 details.card{padding:0}details.card summary{padding:12px;font-weight:800;cursor:pointer;background:#efefef;border-radius:10px;list-style:none}
 details.card summary::-webkit-details-marker{display:none}
 details.card .inner{padding:12px}
 details.card[open] summary{border-bottom:2px solid #999;border-radius:10px 10px 0 0}
+details.auth{padding:0}details.auth summary{padding:12px;font-weight:800;cursor:pointer;background:#efefef;border-radius:10px;list-style:none}
+details.auth summary::-webkit-details-marker{display:none}
+details.auth .authinner{padding:12px}
+details.auth[open] summary{border-bottom:2px solid #999;border-radius:10px 10px 0 0}
 .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 @media(max-width:620px){.field-grid{grid-template-columns:1fr}}
 label{display:block;font-size:13px;font-weight:700}
@@ -33,6 +36,8 @@ label input{background:#d9d9d9}.auth input{background:#fff}
 .actions button[aria-pressed="true"]{background:#111;color:#fff}
 #status{font-size:13px;font-weight:700;margin:6px 0}
 #status.err{color:#c00000}
+#authStatus{font-size:13px;font-weight:700;margin:6px 0}
+#authStatus.err{color:#c00000}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:820px){.grid{grid-template-columns:1fr}}
 details.sec{background:#fff;border:2px solid #999;border-radius:10px;margin-bottom:10px;overflow:hidden}
@@ -57,20 +62,20 @@ details.sec summary{padding:10px;background:#bfbfbf;font-weight:800;cursor:point
 <body>
 <div class="sticky">
 <input type="month" id="period" aria-label="Mánuður" lang="is">
-<span class="monthis" id="monthis">—</span>
-<input type="search" id="q" placeholder="Leita að taxta eða verki">
+<span class="toptitle">Reikningur vegna læknisverka</span>
 <span class="live" id="live">0 ein.</span>
 <button id="dlTop" type="button">Sækja útfyllt Excel</button>
 </div>
 <div class="wrap">
-<h1>Reikningur vegna læknisverka – talning</h1>
-<p class="small">Kveiktu á Sýna faldar til að breyta hvaða raðir eru sýnilegar. Slökktu til að telja.</p>
-<div class="auth">
+<details class="auth" id="authCard" open>
+<summary id="authSummary">Innskráning – smella til að opna / loka</summary>
+<div class="authinner">
 <div id="authStatus">Ekki innskráð/ur</div>
 <input id="email" type="email" placeholder="Netfang"><input id="pass" type="password" placeholder="Lykilorð">
 <label class="showpass"><input id="showPass" type="checkbox"> Sýna lykilorð</label>
 <div class="actions"><button id="btnIn" class="dark" type="button">Skrá inn</button><button id="btnUp" type="button">Nýskrá</button><button id="btnOut" type="button">Skrá út</button></div>
 </div>
+</details>
 <div id="app" hidden>
 <details class="card" id="tplCard">
 <summary>Upplýsingar – smella til að opna / loka</summary>
@@ -130,7 +135,7 @@ details.sec summary{padding:10px;background:#bfbfbf;font-weight:800;cursor:point
 </div>
 <script>
 const SUPA_URL="https://szakeawnkzxhmfvhxvhj.supabase.co";
-const SUPA_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6YWtlZXdua3p4aG1mdmh4dmhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjY5ODgsImV4cCI6MjEwNjIwMjk4OH0.w7h02gfAMc28-kml4Vkrdk-n2iGp3LvIhmQXUfAfHho";
+const SUPA_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6YWtlYXdua3p4aG1mdmh4dmhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjY5ODgsImV4cCI6MjEwNjIwMjk4OH0.w7h02gfAMc28-kml4Vkrdk-n2iGp3LvIhmQXUfAfHho";
 const BUCKET="templates",TPL_PATH="Gjaldskrarverk_base.xlsx";
 const LEFT=[
 {title:"I. Viðtöl og vitjanir",items:[["101","Stutt viðtal  <15 mín.",11],["102","Stutt viðtal  <15 mín. sérfræðings",14],["103","Viðtal og skoðun",14],["104","Viðtal og skoðun sérfræðings",19.5],["111","Vitjun, hvert sem er",27],["112","Vitjun sérfræðings",33],["131","Hverjar byrj. 15 mín í dvöl > 30 mín",12],["141","Hverjar byrj. 15 mín í ferð m. sjúkl.",12],["151","Endurlífgun",100],["152","Slysahjálp á vetvangi",100]]},
@@ -154,8 +159,9 @@ const sb=window.supabase.createClient(SUPA_URL,SUPA_ANON);
 let user=null,counts={},customs=[],tplBytes=null,hidden=new Set(),showHidden=false,loading=false,busy=false,loadVersion=0,s3Timer=null,s3Saving=false;
 $("period").value=new Date().toLocaleDateString("sv-SE",{timeZone:"Atlantic/Reykjavik"}).slice(0,7);
 function month(){return $("period").value;}
-function updateMonthIs(){const v=month();const m=String(v||"").match(/^(\d{4})-(\d{2})$/);if(!m){$("monthis").textContent="—";return;}const mi=Number(m[2])-1;$("monthis").textContent=`${IS_MONTHS[mi]} ${m[1]}`;}
+function fileMonthPart(){const m=String(month()||"").match(/^(\d{4})-(\d{2})$/);if(!m)return month()||"ukjent";const mi=Number(m[2])-1;return `${IS_MONTHS[mi]}-${m[1]}`;}
 function status(m,isErr){const el=$("status");el.textContent=m;el.classList.toggle("err",!!isErr);}
+function authMsg(m,isErr){const el=$("authStatus");el.textContent=m;el.classList.toggle("err",!!isErr);}
 function showHeadError(m){const d=$("tplCard");if(d)d.open=true;status(m,true);setTimeout(()=>{const el=$("status");if(el&&el.scrollIntoView)el.scrollIntoView({behavior:"smooth",block:"center"});},0);}
 function norm(v){if(v==null)return "";if(typeof v==="object"){if(v.text!=null)return String(v.text).trim();if(v.richText)return v.richText.map(x=>x.text).join("").trim();return "";}return String(v).trim();}
 function fmt(d){if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return null;const[y,m,dd]=d.split("-").map(Number);const c=new Date(Date.UTC(y,m-1,dd));if(c.getUTCFullYear()!==y||c.getUTCMonth()!==m-1||c.getUTCDate()!==dd)return null;return `${String(dd).padStart(2,"0")}.${String(m).padStart(2,"0")}.${y}`;}
@@ -170,12 +176,12 @@ function updateS3(){const c=s3calc();$("s3_c1").value=c.c1.toFixed(1);$("s3_c2")
 function updateToggleBtn(){const b=$("toggleHidden");b.setAttribute("aria-pressed",String(showHidden));b.textContent=showHidden?"Fela faldar raðir: ON":"Sýna faldar raðir: OFF";}
 function renderSide(el,groups){
 const old=new Map([...el.querySelectorAll("details")].map(d=>[d.dataset.title,d.open]));
-el.replaceChildren();const q=$("q").value.toLowerCase().trim();
+el.replaceChildren();
 groups.forEach(g=>{
-let items=g.items.filter(it=>!q||`${it[0]} ${it[1]}`.toLowerCase().includes(q));
+let items=g.items;
 if(!showHidden)items=items.filter(it=>!hidden.has(it[0]));
 if(!items.length)return;
-let d=document.createElement("details");d.dataset.title=g.title;d.open=q?true:(old.get(g.title)??true);
+let d=document.createElement("details");d.dataset.title=g.title;d.open=(old.get(g.title)??true);
 let s=document.createElement("summary");s.textContent=g.title;d.append(s);
 let h=document.createElement("div");h.className="hrow";
 let heads=showHidden?["✓","Lýsing","Taxti","Ein.","Fjöldi"]:["Lýsing","Taxti","Ein.","Fjöldi"];
@@ -200,7 +206,6 @@ el.append(d);
 });
 }
 function render(){
-updateMonthIs();
 const s=sections();renderSide($("left"),s.left);renderSide($("right"),s.right);
 const c=updateS3();let u=0;allJobs().forEach(([cd,,w])=>{u+=(counts[cd]||0)*Number(w);});
 $("live").textContent=`${(u+c.be).toLocaleString("is-IS",{maximumFractionDigits:1})} ein.`;
@@ -265,14 +270,14 @@ if(v!==loadVersion)return;
 if(rp.data&&rp.data.value!=null&&String(rp.data.value).trim()!==""){$("s3_star").value=rp.data.value;}
 else{$("s3_star").value="100";}
 }
-}catch(eS3){console.warn(eS3.message);status(`${pm} hlaðinn ✓ - Section III þarf SQL-fix (field dálkur vantar)`,true);loading=false;render();return;}
+}catch(eS3){status(`${pm} hlaðinn ✓ - Section III þarf SQL-fix (field dálkur vantar)`,true);loading=false;render();return;}
 status(`${pm} hlaðinn ✓`,false);
 }catch(e){if(v===loadVersion)status("Hleðsla mistókst: "+e.message,true);}
 finally{if(loadVersion===v){loading=false;render();}}
 }
 S3_EDIT.forEach(id=>{$(id).addEventListener("input",s3live);$(id).addEventListener("blur",()=>{if(s3Timer)clearTimeout(s3Timer);saveS3Silent();});});
 $("showPass").onchange=()=>{$("pass").type=$("showPass").checked?"text":"password";};
-$("q").oninput=render;$("period").onchange=()=>{if(!busy)loadMonth();else updateMonthIs();};
+$("period").onchange=()=>{if(!busy)loadMonth();};
 $("toggleHidden").onclick=()=>{showHidden=!showHidden;render();status(showHidden?"Breytingahamur: hakaðu af til að fela raðir.":"Talningarhamur: gátreitir faldir.",false);};
 $("saveHead").onclick=async()=>{
 if(!user||busy||loading)return;let range;try{range=chosenPeriod();}catch(e){showHeadError(e.message);return;}
@@ -324,18 +329,18 @@ v=tn($("s3_b").value);if(v!=null)ws.getCell("M40").value=v;
 v=tn($("s3_heild").value);if(v!=null)ws.getCell("M44").value=v;
 wb.calcProperties.fullCalcOnLoad=true;
 const buf=await wb.xlsx.writeBuffer();
-const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));a.download=`gjaldskra-filled-${month()}.xlsx`;document.body.append(a);a.click();a.remove();
+const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));a.download=`Gjaldskra-${fileMonthPart()}.xlsx`;document.body.append(a);a.click();a.remove();
 status("Excel sótt - opnaðu í Excel og yfirfarðu.",false);
 }catch(e){showHeadError("Excel mistókst: "+e.message);}
 busy=false;render();
 }
 $("dl").onclick=$("dlTop").onclick=download;
-$("btnIn").onclick=async()=>{const{error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("pass").value});if(error)status(error.message,true);};
-$("btnUp").onclick=async()=>{const{error}=await sb.auth.signUp({email:$("email").value.trim(),password:$("pass").value});status(error?error.message:"Nýskráð - skráðu þig inn.",!!error);};
-$("btnOut").onclick=async()=>await sb.auth.signOut();
+$("btnIn").onclick=async()=>{authMsg("Skrái inn…",false);const{error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("pass").value});if(error)authMsg(error.message,true);else authMsg("Innskráð ✓",false);};
+$("btnUp").onclick=async()=>{authMsg("Nýskrái…",false);const{error}=await sb.auth.signUp({email:$("email").value.trim(),password:$("pass").value});authMsg(error?error.message:"Nýskráð - skráðu þig inn.",!!error);};
+$("btnOut").onclick=async()=>{await sb.auth.signOut();authMsg("Ekki innskráð/ur",false);};
 sb.auth.onAuthStateChange((_e,s)=>{
 const nu=s?.user||null;if(user?.id===nu?.id)return;user=nu;
-$("authStatus").textContent=user?`Innskráð/ur: ${user.email}`:"Ekki innskráð/ur";
+if(user){authMsg(`Innskráð/ur: ${user.email}`,false);$("authSummary").textContent=`Innskráð/ur: ${user.email} – smella til að opna / loka`;$("authCard").open=false;}else{authMsg("Ekki innskráð/ur",false);$("authSummary").textContent=`Innskráning – smella til að opna / loka`;$("authCard").open=true;}
 $("app").hidden=!user;
 if(user){try{hidden=new Set(JSON.parse(localStorage.getItem("gj_hidden_"+user.id)||"[]"));}catch(e){}loadTemplate();loadMonth();}
 else{++loadVersion;counts={};customs=[];tplBytes=null;clearHead();render();}
