@@ -12,6 +12,7 @@
 .sticky input{padding:10px;border-radius:8px;border:1px solid #777;font-size:14px}
 .sticky input[type=search]{flex:1;min-width:135px}
 .live{background:#fff;color:#111;border-radius:8px;padding:9px;font-size:13px;font-weight:800}
+.monthis{background:#fff;color:#111;border-radius:8px;padding:9px;font-size:13px;font-weight:800;text-transform:capitalize}
 button{cursor:pointer}.sticky button,.green{background:#0a7a3f;color:#fff;border:0;border-radius:8px;padding:12px;font-weight:800}
 button:disabled{opacity:.5;cursor:wait}
 .wrap{max-width:1100px;margin:auto;padding:10px}h1{font-size:19px;margin:10px 0 4px}.small{color:#555;font-size:12px}
@@ -55,7 +56,8 @@ details.sec summary{padding:10px;background:#bfbfbf;font-weight:800;cursor:point
 </head>
 <body>
 <div class="sticky">
-<input type="month" id="period" aria-label="Mánuður">
+<input type="month" id="period" aria-label="Mánuður" lang="is">
+<span class="monthis" id="monthis">—</span>
 <input type="search" id="q" placeholder="Leita að taxta eða verki">
 <span class="live" id="live">0 ein.</span>
 <button id="dlTop" type="button">Sækja útfyllt Excel</button>
@@ -121,14 +123,14 @@ details.sec summary{padding:10px;background:#bfbfbf;font-weight:800;cursor:point
 <div class="s3row"><div>Heildarfjöldi viðtala læknis</div><div><input id="s3_heild" type="number" min="0" step="1" placeholder="0"></div></div>
 <div class="s3row calc"><div>Umframviðtöl mánaðar</div><div><input id="s3_c6" readonly tabindex="-1"></div></div>
 <div class="s3row calc"><div>Samtals einingar v/bókunar 5 *)</div><div><input id="s3_be" readonly tabindex="-1"></div></div>
-<div class="s3foot"><button id="saveS3" class="dark" type="button" style="padding:11px;border:1px solid #111;border-radius:8px;background:#111;color:#fff;font-weight:700">Vista Section III</button> <span class="small">Aðeins 6 reitir skrifast í Excel: L31, M32, M35, M39, M40, M44.</span></div>
+<div class="s3foot"><span class="small" id="s3auto">Sjálfvirk vistun: tilbúið. Aðeins 6 reitir skrifast í Excel: L31, M32, M35, M39, M40, M44.</span></div>
 </details>
 </div></div>
 </div>
 </div>
 <script>
 const SUPA_URL="https://szakeawnkzxhmfvhxvhj.supabase.co";
-const SUPA_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6YWtlYXdua3p4aG1mdmh4dmhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjY5ODgsImV4cCI6MjEwNjIwMjk4OH0.w7h02gfAMc28-kml4Vkrdk-n2iGp3LvIhmQXUfAfHho";
+const SUPA_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6YWtlZXdua3p4aG1mdmh4dmhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjY5ODgsImV4cCI6MjEwNjIwMjk4OH0.w7h02gfAMc28-kml4Vkrdk-n2iGp3LvIhmQXUfAfHho";
 const BUCKET="templates",TPL_PATH="Gjaldskrarverk_base.xlsx";
 const LEFT=[
 {title:"I. Viðtöl og vitjanir",items:[["101","Stutt viðtal  <15 mín.",11],["102","Stutt viðtal  <15 mín. sérfræðings",14],["103","Viðtal og skoðun",14],["104","Viðtal og skoðun sérfræðings",19.5],["111","Vitjun, hvert sem er",27],["112","Vitjun sérfræðings",33],["131","Hverjar byrj. 15 mín í dvöl > 30 mín",12],["141","Hverjar byrj. 15 mín í ferð m. sjúkl.",12],["151","Endurlífgun",100],["152","Slysahjálp á vetvangi",100]]},
@@ -146,11 +148,13 @@ const RIGHT=[
 {title:"10 Rannsóknir",items:[["10.2","Hb mæling",4],["10.3","Blóðsykurmæling",4],["10.4","CRP mæling",4],["10.8","Alm. þvagrannsókn og smásjársk.",5],["10.12","Þungunarpróf",6],["10.13","Hálsstrok v. streptokokkarannsóknar",4],["10.14","Hjartalínurit",6.5]]}
 ];
 const S3_EDIT=["s3_dagar","s3_star","s3_stj","s3_a","s3_b","s3_heild"];
+const IS_MONTHS=["janúar","febrúar","mars","apríl","maí","júní","júlí","ágúst","september","október","nóvember","desember"];
 const $=id=>document.getElementById(id);
 const sb=window.supabase.createClient(SUPA_URL,SUPA_ANON);
-let user=null,counts={},customs=[],tplBytes=null,hidden=new Set(),showHidden=false,loading=false,busy=false,loadVersion=0;
+let user=null,counts={},customs=[],tplBytes=null,hidden=new Set(),showHidden=false,loading=false,busy=false,loadVersion=0,s3Timer=null,s3Saving=false;
 $("period").value=new Date().toLocaleDateString("sv-SE",{timeZone:"Atlantic/Reykjavik"}).slice(0,7);
 function month(){return $("period").value;}
+function updateMonthIs(){const v=month();const m=String(v||"").match(/^(\d{4})-(\d{2})$/);if(!m){$("monthis").textContent="—";return;}const mi=Number(m[2])-1;$("monthis").textContent=`${IS_MONTHS[mi]} ${m[1]}`;}
 function status(m,isErr){const el=$("status");el.textContent=m;el.classList.toggle("err",!!isErr);}
 function showHeadError(m){const d=$("tplCard");if(d)d.open=true;status(m,true);setTimeout(()=>{const el=$("status");if(el&&el.scrollIntoView)el.scrollIntoView({behavior:"smooth",block:"center"});},0);}
 function norm(v){if(v==null)return "";if(typeof v==="object"){if(v.text!=null)return String(v.text).trim();if(v.richText)return v.richText.map(x=>x.text).join("").trim();return "";}return String(v).trim();}
@@ -196,12 +200,20 @@ el.append(d);
 });
 }
 function render(){
+updateMonthIs();
 const s=sections();renderSide($("left"),s.left);renderSide($("right"),s.right);
 const c=updateS3();let u=0;allJobs().forEach(([cd,,w])=>{u+=(counts[cd]||0)*Number(w);});
 $("live").textContent=`${(u+c.be).toLocaleString("is-IS",{maximumFractionDigits:1})} ein.`;
 $("dl").disabled=$("dlTop").disabled=busy||loading;updateToggleBtn();
 }
-function s3live(){const c=updateS3();let u=0;allJobs().forEach(([cd,,w])=>{u+=(counts[cd]||0)*Number(w);});$("live").textContent=`${(u+c.be).toLocaleString("is-IS",{maximumFractionDigits:1})} ein.`;}
+function s3live(){const c=updateS3();let u=0;allJobs().forEach(([cd,,w])=>{u+=(counts[cd]||0)*Number(w);});$("live").textContent=`${(u+c.be).toLocaleString("is-IS",{maximumFractionDigits:1})} ein.`;scheduleS3Save();}
+async function saveS3Silent(){
+if(!user||loading||s3Saving)return;if(document.activeElement&&S3_EDIT.includes(document.activeElement.id))return;
+s3Saving=true;const lbl=$("s3auto");if(lbl)lbl.textContent="Sjálfvirk vistun: vista…";
+try{const o={};S3_EDIT.forEach(id=>o[id]=$(id).value.trim());const rows=Object.keys(o).map(field=>({user_id:user.id,period:month(),field,value:o[field]||""}));const{error}=await sb.from("tally_section3").upsert(rows,{onConflict:"user_id,period,field"});if(error)throw error;if(lbl)lbl.textContent="Sjálfvirk vistun: vistað ✓";}catch(e){if(lbl)lbl.textContent="Sjálfvirk vistun mistókst: "+e.message;}
+s3Saving=false;
+}
+function scheduleS3Save(){if(s3Timer)clearTimeout(s3Timer);const lbl=$("s3auto");if(lbl)lbl.textContent="Sjálfvirk vistun: skrifar…";s3Timer=setTimeout(saveS3Silent,2000);}
 async function setHidden(code,hide){
 if(hide)hidden.add(code);else hidden.delete(code);render();
 localStorage.setItem("gj_hidden_"+(user?user.id:"anon"),JSON.stringify([...hidden]));
@@ -222,7 +234,7 @@ try{const{data,error}=await sb.storage.from(BUCKET).download(TPL_PATH);if(error)
 catch(e){$("tplStatus").textContent="Storage error: "+e.message;}
 }
 async function loadMonth(){
-if(!user||busy)return;const v=++loadVersion;const pm=month();loading=true;counts={};customs=[];clearHead();render();status(`Sæki ${pm}…`,false);
+if(!user||busy)return;const v=++loadVersion;const pm=month();loading=true;if(s3Timer)clearTimeout(s3Timer);counts={};customs=[];clearHead();render();status(`Sæki ${pm}…`,false);
 try{
 const[r1,r2,r3,r4]=await Promise.all([
 sb.from("tally_counts").select("code,count").eq("user_id",user.id).eq("period",pm),
@@ -246,14 +258,21 @@ try{
 const r5=await sb.from("tally_section3").select("field,value").eq("user_id",user.id).eq("period",pm);
 if(r5.error)throw r5.error;
 const s3={};(r5.data||[]).forEach(r=>s3[r.field]=r.value||"");S3_EDIT.forEach(id=>{if(s3[id]!=null)$(id).value=s3[id];});
+if(!$("s3_star").value){
+const[y2,m2]=pm.split("-").map(Number);const prevPm=new Date(Date.UTC(y2,m2-2,1)).toISOString().slice(0,7);
+const rp=await sb.from("tally_section3").select("value").eq("user_id",user.id).eq("period",prevPm).eq("field","s3_star").maybeSingle();
+if(v!==loadVersion)return;
+if(rp.data&&rp.data.value!=null&&String(rp.data.value).trim()!==""){$("s3_star").value=rp.data.value;}
+else{$("s3_star").value="100";}
+}
 }catch(eS3){console.warn(eS3.message);status(`${pm} hlaðinn ✓ - Section III þarf SQL-fix (field dálkur vantar)`,true);loading=false;render();return;}
 status(`${pm} hlaðinn ✓`,false);
 }catch(e){if(v===loadVersion)status("Hleðsla mistókst: "+e.message,true);}
 finally{if(loadVersion===v){loading=false;render();}}
 }
-S3_EDIT.forEach(id=>{$(id).addEventListener("input",s3live);});
+S3_EDIT.forEach(id=>{$(id).addEventListener("input",s3live);$(id).addEventListener("blur",()=>{if(s3Timer)clearTimeout(s3Timer);saveS3Silent();});});
 $("showPass").onchange=()=>{$("pass").type=$("showPass").checked?"text":"password";};
-$("q").oninput=render;$("period").onchange=()=>{if(!busy)loadMonth();};
+$("q").oninput=render;$("period").onchange=()=>{if(!busy)loadMonth();else updateMonthIs();};
 $("toggleHidden").onclick=()=>{showHidden=!showHidden;render();status(showHidden?"Breytingahamur: hakaðu af til að fela raðir.":"Talningarhamur: gátreitir faldir.",false);};
 $("saveHead").onclick=async()=>{
 if(!user||busy||loading)return;let range;try{range=chosenPeriod();}catch(e){showHeadError(e.message);return;}
@@ -261,16 +280,11 @@ busy=true;render();
 const{error}=await sb.from("tally_headers").upsert({user_id:user.id,period:month(),stod:$("fStod").value,per:range,name:$("fName").value,kt:$("fKt").value},{onConflict:"user_id,period"});
 if(error)showHeadError(error.message);else status("Vistað ✓",false);busy=false;render();
 };
-$("saveS3").onclick=async()=>{
-if(!user||busy||loading)return;busy=true;render();status("Vista Section III…",false);
-try{const o={};S3_EDIT.forEach(id=>o[id]=$(id).value.trim());const rows=Object.keys(o).map(field=>({user_id:user.id,period:month(),field,value:o[field]||""}));const{error}=await sb.from("tally_section3").upsert(rows,{onConflict:"user_id,period,field"});if(error)throw error;status("Section III vistað ✓",false);}catch(e){status("Section III ekki vistað: "+e.message,true);}
-busy=false;render();
-};
 $("rst").onclick=async()=>{
 if(!user||busy||loading)return;if(!confirm(`Núllstilla ${month()}?`))return;busy=true;render();
 const{error}=await sb.rpc("reset_tally_month",{p_period:month()});
 if(!error){
-counts={};S3_EDIT.forEach(id=>{$(id).value="";});
+counts={};S3_EDIT.forEach(id=>{$(id).value="";});$("s3_star").value="100";
 try{await sb.from("tally_section3").delete().eq("user_id",user.id).eq("period",month());}catch(e){}
 }
 if(error)status(error.message,true);else status("Núllstillt.",false);busy=false;render();};
