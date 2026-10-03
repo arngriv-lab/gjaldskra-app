@@ -25,9 +25,6 @@ details.card[open] summary{border-bottom:2px solid #999;border-radius:10px 10px 
 label{display:block;font-size:13px;font-weight:700}
 label input,.auth input{display:block;width:100%;padding:10px;border:1px solid #999;border-radius:6px;margin:4px 0 8px;font-size:15px}
 label input{background:#d9d9d9}.auth input{background:#fff}
-.s3grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-@media(max-width:620px){.s3grid{grid-template-columns:1fr}}
-.s3grid label input{background:#fff;border:1px solid #777}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.actions button{padding:11px;border:1px solid #111;border-radius:8px;background:#fff;font-weight:700}
 .actions button.dark{background:#111;color:#fff}.actions button.green{background:#0a7a3f;color:#fff;border-color:#0a7a3f}
 .actions button[aria-pressed="true"]{background:#111;color:#fff}
@@ -45,6 +42,13 @@ details.sec summary{padding:10px;background:#bfbfbf;font-weight:800;cursor:point
 .grey button{width:42px;height:44px;font-size:19px;border:1px solid #777;border-radius:7px;background:#fff}
 .grey button.plus{background:#111;color:#fff;border-color:#111}
 .cnt{font-weight:800;text-align:center;min-width:24px}
+.s3head,.s3row{display:grid;grid-template-columns:minmax(0,1fr) 145px;align-items:center;font-size:13px}
+.s3head{background:#e7e6e6;font-weight:700;border-bottom:1px solid #999}
+.s3head div,.s3row label{padding:6px}
+.s3row{border-bottom:1px solid #eee}
+.s3row label{margin:0}
+.s3row input{width:100%;min-width:0;height:40px;padding:6px;border:1px solid #999;border-radius:4px;background:#d9d9d9;font:inherit}
+.s3foot{padding:10px}
 </style>
 </head>
 <body>
@@ -56,7 +60,7 @@ details.sec summary{padding:10px;background:#bfbfbf;font-weight:800;cursor:point
 </div>
 <div class="wrap">
 <h1>Reikningur vegna læknisverka – talning</h1>
-<p class="small">Talning með + / -. Section III er sérstaklega fellanleg með beinum tölureitum.</p>
+<p class="small">Talning með + / -. Kafli III er sérstaklega fellanlegur með beinum tölureitum.</p>
 <div class="auth">
 <div id="authStatus">Ekki innskráð/ur</div>
 <input id="email" type="email" placeholder="Netfang"><input id="pass" type="password" placeholder="Lykilorð">
@@ -87,27 +91,6 @@ details.sec summary{padding:10px;background:#bfbfbf;font-weight:800;cursor:point
 </div>
 </details>
 
-<details class="card" id="s3Card">
-<summary>III. Afkastatengd laun – bókun 5 – smella til að opna / loka</summary>
-<div class="inner">
-<p class="small">Bein innsláttur, engir + / - hnappar. Vistast á mánuði.</p>
-<div class="s3grid">
-<label>Dagar<input id="s3_dagar" type="number" min="0" step="1" placeholder="t.d. 10"></label>
-<label>Starfshlutfall %<input id="s3_starshlutfall" type="number" min="0" max="100" step="any" placeholder="100"></label>
-<label>Stjórnunarafsláttur %<input id="s3_stjornun" type="number" min="0" max="100" step="any" placeholder="0"></label>
-<label>a - fundir og kennsla<input id="s3_a" type="number" min="0" step="1" placeholder="0"></label>
-<label>b - önnur sérverkefni<input id="s3_b" type="number" min="0" step="1" placeholder="0"></label>
-<label>Heildarfjöldi viðtala læknis<input id="s3_heild" type="number" min="0" step="1" placeholder="0"></label>
-<label>Kvótastillt af yfirmanni - viðtöl<input id="s3_kvoti" type="number" min="0" step="1" placeholder="0"></label>
-<label>Viðbragðsvaktir - Dags.<input id="s3_vakt_dags" type="text" placeholder="t.d. 27.04.-03.05."></label>
-<label>Viðbragðsvaktir - Tímar<input id="s3_vakt_timar" type="number" min="0" step="any" placeholder="0"></label>
-<label>Símtöl á vakt - 15 mín<input id="s3_s15" type="number" min="0" step="1" placeholder="0"></label>
-<label>Símtöl á vakt - 30 mín<input id="s3_s30" type="number" min="0" step="1" placeholder="0"></label>
-</div>
-<div class="actions"><button id="saveS3" class="dark" type="button">Vista Section III</button></div>
-</div>
-</details>
-
 <details class="card" id="customCard">
 <summary>Bæta við eigin röð – smella til að opna / loka</summary>
 <div class="inner">
@@ -120,12 +103,33 @@ details.sec summary{padding:10px;background:#bfbfbf;font-weight:800;cursor:point
 <div class="actions"><button id="cAdd" type="button">Vista röð</button><button id="cDel" type="button">Eyða eigin röð</button></div>
 </div>
 </details>
-<div class="grid"><div id="left"></div><div id="right"></div></div>
+
+<div class="grid">
+<div id="left"></div>
+<div class="right-column">
+<div id="right"></div>
+<details class="sec" id="s3Card">
+<summary>III. Afkastatengd laun (bókun 5)</summary>
+<div class="s3head"><div>Lýsing</div><div>Innsláttur</div></div>
+<div class="s3row"><label for="s3_dagar">Dagar</label><input id="s3_dagar" type="number" min="0" step="1" placeholder="t.d. 10"></div>
+<div class="s3row"><label for="s3_starshlutfall">Starfshlutfall %</label><input id="s3_starshlutfall" type="number" min="0" max="100" step="any" placeholder="100"></div>
+<div class="s3row"><label for="s3_stjornun">Stjórnunarafsláttur %</label><input id="s3_stjornun" type="number" min="0" max="100" step="any" placeholder="0"></div>
+<div class="s3row"><label for="s3_a">a - fundir og kennsla</label><input id="s3_a" type="number" min="0" step="1" placeholder="0"></div>
+<div class="s3row"><label for="s3_b">b - önnur sérverkefni</label><input id="s3_b" type="number" min="0" step="1" placeholder="0"></div>
+<div class="s3row"><label for="s3_heild">Heildarfjöldi viðtala læknis</label><input id="s3_heild" type="number" min="0" step="1" placeholder="0"></div>
+<div class="s3row"><label for="s3_kvoti">Kvótastillt af yfirmanni - viðtöl</label><input id="s3_kvoti" type="number" min="0" step="1" placeholder="0"></div>
+<div class="s3row"><label for="s3_vakt_dags">Viðbragðsvaktir - Dags.</label><input id="s3_vakt_dags" type="text" placeholder="t.d. 27.04.-03.05."></div>
+<div class="s3row"><label for="s3_vakt_timar">Viðbragðsvaktir - Tímar</label><input id="s3_vakt_timar" type="number" min="0" step="any" placeholder="0"></div>
+<div class="s3row"><label for="s3_s15">Símtöl á vakt - 15 mín</label><input id="s3_s15" type="number" min="0" step="1" placeholder="0"></div>
+<div class="s3row"><label for="s3_s30">Símtöl á vakt - 30 mín</label><input id="s3_s30" type="number" min="0" step="1" placeholder="0"></div>
+<div class="s3foot"><button id="saveS3" class="dark" type="button">Vista Section III</button></div>
+</details>
+</div>
 </div>
 </div>
 <script>
 const SUPA_URL="https://szakeawnkzxhmfvhxvhj.supabase.co";
-const SUPA_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6YWtlYXdua3p4aG1mdmh4dmhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjY5ODgsImV4cCI6MjEwNjIwMjk4OH0.w7h02gfAMc28-kml4Vkrdk-n2iGp3LvIhmQXUfAfHho";
+const SUPA_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6YWtlZXdua3p4aG1mdmh4dmhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjY5ODgsImV4cCI6MjEwNjIwMjk4OH0.w7h02gfAMc28-kml4Vkrdk-n2iGp3LvIhmQXUfAfHho";
 const BUCKET="templates",TPL_PATH="Gjaldskrarverk_base.xlsx";
 const LEFT=[
 {title:"I. Viðtöl og vitjanir",items:[["101","Stutt viðtal <15 mín.",11],["102","Stutt viðtal <15 mín. sérfræðings",14],["103","Viðtal og skoðun",14],["104","Viðtal og skoðun sérfræðings",19.5],["111","Vitjun, hvert sem er",27],["112","Vitjun sérfræðings",33],["131","Hverjar byrj. 15 mín í dvöl > 30 mín",12],["141","Hverjar byrj. 15 mín í ferð m. sjúkl.",12],["151","Endurlífgun",100],["152","Slysahjálp á vetvangi",100]]},
