@@ -42,35 +42,42 @@ details.sec summary{padding:10px;background:#bfbfbf;font-weight:800;cursor:point
 .grey button{width:42px;height:44px;font-size:19px;border:1px solid #777;border-radius:7px;background:#fff}
 .grey button.plus{background:#111;color:#fff;border-color:#111}
 .cnt{font-weight:800;text-align:center;min-width:24px}
+.s3head,.s3row{display:grid;grid-template-columns:minmax(0,1fr) 145px;align-items:center;font-size:13px}
+.s3head{background:#e7e6e6;font-weight:700;border-bottom:1px solid #999}
+.s3head div,.s3row label{padding:6px}
+.s3row{border-bottom:1px solid #eee}
+.s3row label{margin:0}
+.s3row input{width:100%;min-width:0;height:40px;padding:6px;border:1px solid #999;border-radius:4px;background:#d9d9d9;font:inherit}
+.s3foot{padding:10px}
 </style>
 </head>
 <body>
 <div class="sticky">
 <input type="month" id="period" aria-label="Mánuður">
 <input type="search" id="q" placeholder="Leita að taxta eða verki">
-<span class="live" id="live">0 ein. · 0 kr.</span>
+<span class="live" id="live">0 ein.</span>
 <button id="dlTop" type="button">Sækja útfyllt Excel</button>
 </div>
 <div class="wrap">
 <h1>Reikningur vegna læknisverka – talning</h1>
-<p class="small">Kveiktu á Sýna faldar til að breyta hvaða raðir eru sýnilegar. Slökktu til að telja.</p>
+<p class="small">Talning með + / -. Kafli III er sérstaklega fellanlegur með beinum tölureitum.</p>
 <div class="auth">
 <div id="authStatus">Ekki innskráð/ur</div>
 <input id="email" type="email" placeholder="Netfang"><input id="pass" type="password" placeholder="Lykilorð">
 <div class="actions"><button id="btnIn" class="dark" type="button">Skrá inn</button><button id="btnUp" type="button">Nýskrá</button><button id="btnOut" type="button">Skrá út</button></div>
 </div>
 <div id="app" hidden>
-<details class="card" id="tplCard">
-<summary>Template / upplýsingar – smella til að opna / loka</summary>
+<details class="card" id="infoCard">
+<summary>Upplýsingar – smella til að opna / loka</summary>
 <div class="inner">
 <div id="tplStatus">Sæki Excel-grunnskrá…</div>
 <div id="status" role="status">—</div>
 <div class="field-grid">
-<label>Heilsugæslustöð (B3)<input id="fStod" type="text"></label>
-<label>Nafn læknis (K2)<input id="fName" type="text"></label>
-<label>Kennitala (K3)<input id="fKt" type="text"></label><div></div>
-<label>Frá – upphaf tímabils (D2)<input id="dateFrom" type="date"></label>
-<label>Til – lok tímabils (D2)<input id="dateTo" type="date"></label>
+<label>Heilsugæslustöð<input id="fStod" type="text"></label>
+<label>Nafn læknis<input id="fName" type="text"></label>
+<label>Kennitala<input id="fKt" type="text"></label><div></div>
+<label>Frá – upphaf tímabils<input id="dateFrom" type="date"></label>
+<label>Til – lok tímabils<input id="dateTo" type="date"></label>
 </div>
 <div class="actions">
 <button id="saveHead" class="dark" type="button">Vista upplýsingar</button>
@@ -83,6 +90,7 @@ details.sec summary{padding:10px;background:#bfbfbf;font-weight:800;cursor:point
 </div>
 </div>
 </details>
+
 <details class="card" id="customCard">
 <summary>Bæta við eigin röð – smella til að opna / loka</summary>
 <div class="inner">
@@ -95,13 +103,34 @@ details.sec summary{padding:10px;background:#bfbfbf;font-weight:800;cursor:point
 <div class="actions"><button id="cAdd" type="button">Vista röð</button><button id="cDel" type="button">Eyða eigin röð</button></div>
 </div>
 </details>
-<div class="grid"><div id="left"></div><div id="right"></div></div>
+
+<div class="grid">
+<div id="left"></div>
+<div class="right-column">
+<div id="right"></div>
+<details class="sec" id="s3Card">
+<summary>III. Afkastatengd laun (bókun 5)</summary>
+<div class="s3head"><div>Lýsing</div><div>Innsláttur</div></div>
+<div class="s3row"><label for="s3_dagar">Dagar</label><input id="s3_dagar" type="number" min="0" step="1" placeholder="t.d. 10"></div>
+<div class="s3row"><label for="s3_starshlutfall">Starfshlutfall %</label><input id="s3_starshlutfall" type="number" min="0" max="100" step="any" placeholder="100"></div>
+<div class="s3row"><label for="s3_stjornun">Stjórnunarafsláttur %</label><input id="s3_stjornun" type="number" min="0" max="100" step="any" placeholder="0"></div>
+<div class="s3row"><label for="s3_a">a - fundir og kennsla</label><input id="s3_a" type="number" min="0" step="1" placeholder="0"></div>
+<div class="s3row"><label for="s3_b">b - önnur sérverkefni</label><input id="s3_b" type="number" min="0" step="1" placeholder="0"></div>
+<div class="s3row"><label for="s3_heild">Heildarfjöldi viðtala læknis</label><input id="s3_heild" type="number" min="0" step="1" placeholder="0"></div>
+<div class="s3row"><label for="s3_kvoti">Kvótastillt af yfirmanni - viðtöl</label><input id="s3_kvoti" type="number" min="0" step="1" placeholder="0"></div>
+<div class="s3row"><label for="s3_vakt_dags">Viðbragðsvaktir - Dags.</label><input id="s3_vakt_dags" type="text" placeholder="t.d. 27.04.-03.05."></div>
+<div class="s3row"><label for="s3_vakt_timar">Viðbragðsvaktir - Tímar</label><input id="s3_vakt_timar" type="number" min="0" step="any" placeholder="0"></div>
+<div class="s3row"><label for="s3_s15">Símtöl á vakt - 15 mín</label><input id="s3_s15" type="number" min="0" step="1" placeholder="0"></div>
+<div class="s3row"><label for="s3_s30">Símtöl á vakt - 30 mín</label><input id="s3_s30" type="number" min="0" step="1" placeholder="0"></div>
+<div class="s3foot"><button id="saveS3" class="dark" type="button">Vista Section III</button></div>
+</details>
+</div>
 </div>
 </div>
 <script>
 const SUPA_URL="https://szakeawnkzxhmfvhxvhj.supabase.co";
-const SUPA_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6YWtlYXdua3p4aG1mdmh4dmhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjY5ODgsImV4cCI6MjEwNjIwMjk4OH0.w7h02gfAMc28-kml4Vkrdk-n2iGp3LvIhmQXUfAfHho";
-const BUCKET="templates",TPL_PATH="Gjaldskrarverk_base.xlsx",RATE=231.7;
+const SUPA_ANON="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6YWtlZXdua3p4aG1mdmh4dmhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2MjY5ODgsImV4cCI6MjEwNjIwMjk4OH0.w7h02gfAMc28-kml4Vkrdk-n2iGp3LvIhmQXUfAfHho";
+const BUCKET="templates",TPL_PATH="Gjaldskrarverk_base.xlsx";
 const LEFT=[
 {title:"I. Viðtöl og vitjanir",items:[["101","Stutt viðtal <15 mín.",11],["102","Stutt viðtal <15 mín. sérfræðings",14],["103","Viðtal og skoðun",14],["104","Viðtal og skoðun sérfræðings",19.5],["111","Vitjun, hvert sem er",27],["112","Vitjun sérfræðings",33],["131","Hverjar byrj. 15 mín í dvöl > 30 mín",12],["141","Hverjar byrj. 15 mín í ferð m. sjúkl.",12],["151","Endurlífgun",100],["152","Slysahjálp á vetvangi",100]]},
 {title:"1 Augnlækningar",items:[["1.3","Skoðun. með slitlampa",10],["1.4","Aðskotahlutur tekinn úr glæru",15],["1.5","Skolun á auga",15]]},
@@ -117,6 +146,7 @@ const RIGHT=[
 {title:"9 Taugalækningar",items:[["9.1","Álag v.nákvæmrar taugaskoðunar",15]]},
 {title:"10 Rannsóknir",items:[["10.2","Hb mæling",4],["10.3","Blóðsykurmæling",4],["10.4","CRP mæling",4],["10.8","Alm. þvagrannsókn og smásjársk.",5],["10.12","Þungunarpróf",6],["10.13","Hálsstrok v. streptokokkarannsóknar",4],["10.14","Hjartalínurit",6.5]]}
 ];
+const S3_IDS=["s3_dagar","s3_starshlutfall","s3_stjornun","s3_a","s3_b","s3_heild","s3_kvoti","s3_vakt_dags","s3_vakt_timar","s3_s15","s3_s30"];
 const $=id=>document.getElementById(id);
 const sb=window.supabase.createClient(SUPA_URL,SUPA_ANON);
 let user=null,counts={},customs=[],tplBytes=null,hidden=new Set(),showHidden=false,loading=false,busy=false,loadVersion=0;
@@ -127,7 +157,7 @@ function norm(v){if(v==null)return "";if(typeof v==="object"){if(v.text!=null)re
 function fmt(d){if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return null;const[y,m,dd]=d.split("-").map(Number);const c=new Date(Date.UTC(y,m-1,dd));if(c.getUTCFullYear()!==y||c.getUTCMonth()!==m-1||c.getUTCDate()!==dd)return null;return `${String(dd).padStart(2,"0")}.${String(m).padStart(2,"0")}.${y}`;}
 function chosenPeriod(){const a=fmt($("dateFrom").value),b=fmt($("dateTo").value);if(!a||!b)throw new Error("Veldu bæði upphaf og lok tímabils.");if($("dateFrom").value>$("dateTo").value)throw new Error("Lok verða eftir upphaf.");return `${a} - ${b}`;}
 function readSavedPeriod(t){const m=String(t||"").match(/^(\d{2})\.(\d{2})\.(\d{4})\s*-\s*(\d{2})\.(\d{2})\.(\d{4})$/);if(!m)return;const f=`${m[3]}-${m[2]}-${m[1]}`,to=`${m[6]}-${m[5]}-${m[4]}`;if(fmt(f)&&fmt(to)){$("dateFrom").value=f;$("dateTo").value=to;}}
-function clearHead(){["fStod","fName","fKt","dateFrom","dateTo"].forEach(id=>$(id).value="");}
+function clearHead(){["fStod","fName","fKt","dateFrom","dateTo"].forEach(id=>$(id).value="");S3_IDS.forEach(id=>$(id).value="");}
 function sections(){let L=JSON.parse(JSON.stringify(LEFT)),R=JSON.parse(JSON.stringify(RIGHT));customs.forEach(c=>{let arr=c.side==="right"?R:L;let ex=arr.flatMap(s=>s.items).find(i=>i[0]===c.code);if(ex){ex[1]=c.label;ex[2]=Number(c.units);}else{let e=arr.find(s=>s.title==="Viðbót");if(!e){e={title:"Viðbót",items:[]};arr.push(e);}e.items.push([c.code,c.label,Number(c.units)]);}});return {left:L,right:R};}
 function allJobs(){const s=sections();return [...s.left,...s.right].flatMap(g=>g.items);}
 function updateToggleBtn(){const b=$("toggleHidden");b.setAttribute("aria-pressed",String(showHidden));b.textContent=showHidden?"Fela faldar raðir: ON":"Sýna faldar raðir: OFF";}
@@ -149,7 +179,7 @@ let isH=hidden.has(code);
 let r=document.createElement("div");r.className="rrow"+(isH?" hidden-row":"");
 r.style.gridTemplateColumns=showHidden?"34px minmax(0,1fr) 53px 42px 112px":"minmax(0,1fr) 53px 42px 112px";
 if(showHidden){
-let c0=document.createElement("div");let cb=document.createElement("input");cb.type="checkbox";cb.className="vischeck";cb.checked=!isH;cb.title="Sýna röð";cb.onchange=()=>setHidden(code,!cb.checked);c0.append(cb);r.append(c0);
+let c0=document.createElement("div");let cb=document.createElement("input");cb.type="checkbox";cb.className="vischeck";cb.checked=!isH;cb.onchange=()=>setHidden(code,!cb.checked);c0.append(cb);r.append(c0);
 }
 let c1=document.createElement("div");c1.textContent=name;
 let c2=document.createElement("div");c2.textContent=code;
@@ -167,9 +197,11 @@ el.append(d);
 function render(){
 const s=sections();renderSide($("left"),s.left);renderSide($("right"),s.right);
 let u=0;allJobs().forEach(([c,,w])=>{u+=(counts[c]||0)*Number(w);});
-$("live").textContent=`${u.toLocaleString("is-IS",{maximumFractionDigits:1})} ein. · ${Math.round(u*RATE).toLocaleString("is-IS")} kr.`;
+$("live").textContent=`${u.toLocaleString("is-IS",{maximumFractionDigits:1})} ein.`;
 $("dl").disabled=$("dlTop").disabled=busy||loading;updateToggleBtn();
 }
+function getS3(){const o={};S3_IDS.forEach(id=>o[id]=$(id).value.trim());return o;}
+function setS3(o){S3_IDS.forEach(id=>$(id).value=o[id]||"");}
 async function setHidden(code,hide){
 if(hide)hidden.add(code);else hidden.delete(code);render();
 localStorage.setItem("gj_hidden_"+(user?user.id:"anon"),JSON.stringify([...hidden]));
@@ -195,30 +227,42 @@ catch(e){$("tplStatus").textContent="Storage error: "+e.message;}
 async function loadMonth(){
 if(!user||busy)return;const v=++loadVersion;const pm=month();loading=true;counts={};customs=[];clearHead();render();status(`Sæki ${pm}…`);
 try{
-const[r1,r2,r3,r4]=await Promise.all([
+const[r1,r2,r3,r4,r5]=await Promise.all([
 sb.from("tally_counts").select("code,count").eq("user_id",user.id).eq("period",pm),
 sb.from("job_custom").select("*").eq("user_id",user.id),
 sb.from("tally_headers").select("*").eq("user_id",user.id).eq("period",pm).maybeSingle(),
-sb.from("job_visibility").select("code").eq("user_id",user.id)
+sb.from("job_visibility").select("code").eq("user_id",user.id),
+sb.from("tally_section3").select("field,value").eq("user_id",user.id).eq("period",pm)
 ]);
 if(v!==loadVersion)return;
-if(r1.error)throw r1.error;if(r2.error)throw r2.error;if(r3.error)throw r3.error;if(r4.error)throw r4.error;
+if(r1.error)throw r1.error;if(r2.error)throw r2.error;if(r3.error)throw r3.error;if(r4.error)throw r4.error;if(r5.error)throw r5.error;
 (r1.data||[]).forEach(r=>counts[r.code]=Number(r.count)||0);
 customs=r2.data||[];
 hidden=new Set((r4.data||[]).map(r=>r.code));
 localStorage.setItem("gj_hidden_"+user.id,JSON.stringify([...hidden]));
 if(r3.data){$("fStod").value=r3.data.stod||"";$("fName").value=r3.data.name||"";$("fKt").value=r3.data.kt||"";readSavedPeriod(r3.data.per);}
+const s3={};(r5.data||[]).forEach(r=>s3[r.field]=r.value||"");setS3(s3);
 status(`${pm} hlaðinn ✓`);
 }catch(e){if(v===loadVersion)status("Hleðsla mistókst: "+e.message);}
 finally{if(v===loadVersion){loading=false;render();}}
 }
 $("q").oninput=render;$("period").onchange=()=>{if(!busy)loadMonth();};
-$("toggleHidden").onclick=()=>{showHidden=!showHidden;render();status(showHidden?"Breytingahamur: hakaðu af til að fela raðir.":"Talningarhamur: gátreitir faldir.");};
+$("toggleHidden").onclick=()=>{showHidden=!showHidden;render();status(showHidden?"Breytingahamur.":"Talningarhamur.");};
 $("saveHead").onclick=async()=>{
 if(!user||busy||loading)return;let range;try{range=chosenPeriod();}catch(e){status(e.message);return;}
 busy=true;render();
 const{error}=await sb.from("tally_headers").upsert({user_id:user.id,period:month(),stod:$("fStod").value,per:range,name:$("fName").value,kt:$("fKt").value},{onConflict:"user_id,period"});
 status(error?error.message:"Vistað ✓");busy=false;render();
+};
+$("saveS3").onclick=async()=>{
+if(!user||busy||loading)return;busy=true;render();status("Vista Section III…");
+try{
+const o=getS3();
+const rows=Object.keys(o).map(field=>({user_id:user.id,period:month(),field,value:o[field]||""}));
+const{error}=await sb.from("tally_section3").upsert(rows,{onConflict:"user_id,period,field"});
+if(error)throw error;status("Section III vistað ✓");
+}catch(e){status("Section III ekki vistað: "+e.message);}
+busy=false;render();
 };
 $("copyLast").onclick=async()=>{
 if(!user)return;const[y,m]=month().split("-").map(Number);const prev=new Date(Date.UTC(y,m-2,1)).toISOString().slice(0,7);
@@ -236,6 +280,35 @@ const{error}=await sb.from("job_custom").upsert({user_id:user.id,code,label,unit
 if(error)status(error.message);else loadMonth();
 };
 $("cDel").onclick=async()=>{if(!user)return;const code=$("cCode").value.trim();if(!code)return;await sb.from("job_custom").delete().eq("user_id",user.id).eq("code",code);loadMonth();};
+function toNum(v){if(v==null||v==="")return null;const n=Number(String(v).replace(",","."));return Number.isFinite(n)?n:null;}
+function setByLabel(ws,needles,val){
+if(val==null||val==="")return false;
+for(const needle of needles){
+let done=false;
+ws.eachRow(row=>{
+if(done)return;
+for(const lc of [2,11]){
+const t=norm(row.getCell(lc).value).toLowerCase();
+if(t&&t.includes(needle.toLowerCase())){
+for(let c=lc+1;c<=lc+4;c++){
+const cur=norm(row.getCell(c).value).toLowerCase();
+if(cur==="hlutfall (%)"||cur==="fjöldi viðtala"||cur==="dagar"||cur==="viðtöl"||cur==="tímar"||cur==="dags.")continue;
+const existing=row.getCell(c).value;
+if(existing==null||existing===""||typeof existing==="number"||!isNaN(Number(existing))){
+row.getCell(c).value=val;done=true;break;
+}
+}
+if(!done){
+row.getCell(lc+1).value=val;done=true;
+}
+break;
+}
+}
+});
+if(done)return true;
+}
+return false;
+}
 async function download(){
 if(!user||busy||loading)return;if(!tplBytes){status("Template vantar.");return;}
 let range;try{range=chosenPeriod();}catch(e){status(e.message);return;}
@@ -256,10 +329,30 @@ ws.getCell("D2").value=range;
 if($("fStod").value.trim())ws.getCell("B3").value=$("fStod").value;
 if($("fName").value.trim())ws.getCell("K2").value=$("fName").value;
 if($("fKt").value.trim())ws.getCell("K3").value=$("fKt").value;
+const s3=getS3();
+const pct=(v)=>{const n=toNum(v);if(n==null)return null;return n>1?n/100:n;};
+const num=(v)=>toNum(v);
+setByLabel(ws,["lágmarksfjöldi viðtala m.v. fullt starf"],num(s3.s3_dagar)??s3.s3_dagar);
+setByLabel(ws,["starfshlutfall"],pct(s3.s3_starshlutfall)??s3.s3_starshlutfall);
+setByLabel(ws,["stjórnunarafsláttur"],pct(s3.s3_stjornun)??s3.s3_stjornun);
+setByLabel(ws,["a - fundir"],num(s3.s3_a)??s3.s3_a);
+setByLabel(ws,["b - önnur sérverkefni"],num(s3.s3_b)??s3.s3_b);
+setByLabel(ws,["heildarfjöldi viðtala"],num(s3.s3_heild)??s3.s3_heild);
+setByLabel(ws,["kvótastillt"],num(s3.s3_kvoti)??s3.s3_kvoti);
+setByLabel(ws,["viðbragðsvaktir"],s3.s3_vakt_dags||null);
+if(s3.s3_vakt_timar!=="")setByLabel(ws,["samtals tímar"],num(s3.s3_vakt_timar)??s3.s3_vakt_timar);
+if(s3.s3_s15!==""){
+let done=false;
+ws.eachRow(row=>{if(done)return;const t=norm(row.getCell(16).value)+ " " + norm(row.getCell(17).value);if(t.toLowerCase().includes("15min")){for(let c=16;c<=17;c++){row.getCell(c).value=num(s3.s3_s15);done=true;break;}}});
+}
+if(s3.s3_s30!==""){
+let done=false;
+ws.eachRow(row=>{if(done)return;const t=norm(row.getCell(16).value)+ " " + norm(row.getCell(17).value);if(t.toLowerCase().includes("30min")){row.getCell(17).value=num(s3.s3_s30);done=true;}});
+}
 wb.calcProperties.fullCalcOnLoad=true;
 const buf=await wb.xlsx.writeBuffer();
 const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));a.download=`gjaldskra-filled-${month()}.xlsx`;document.body.append(a);a.click();a.remove();
-status("Excel sótt - opnaðu í Excel og yfirfarðu.");
+status("Excel sótt - opnaðu í Excel og yfirfarðu Section III.");
 }catch(e){status("Excel mistókst: "+e.message);}
 busy=false;render();
 }
