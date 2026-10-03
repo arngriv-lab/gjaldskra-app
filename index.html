@@ -224,15 +224,14 @@ catch(e){$("tplStatus").textContent="Storage error: "+e.message;}
 async function loadMonth(){
 if(!user||busy)return;const v=++loadVersion;const pm=month();loading=true;counts={};customs=[];clearHead();render();status(`Sæki ${pm}…`,false);
 try{
-const[r1,r2,r3,r4,r5]=await Promise.all([
+const[r1,r2,r3,r4]=await Promise.all([
 sb.from("tally_counts").select("code,count").eq("user_id",user.id).eq("period",pm),
 sb.from("job_custom").select("*").eq("user_id",user.id),
 sb.from("tally_headers").select("*").eq("user_id",user.id).eq("period",pm).maybeSingle(),
-sb.from("job_visibility").select("code").eq("user_id",user.id),
-sb.from("tally_section3").select("field,value").eq("user_id",user.id).eq("period",pm)
+sb.from("job_visibility").select("code").eq("user_id",user.id)
 ]);
 if(v!==loadVersion)return;
-if(r1.error)throw r1.error;if(r2.error)throw r2.error;if(r3.error)throw r3.error;if(r4.error)throw r4.error;if(r5.error)throw r5.error;
+if(r1.error)throw r1.error;if(r2.error)throw r2.error;if(r3.error)throw r3.error;if(r4.error)throw r4.error;
 (r1.data||[]).forEach(r=>counts[r.code]=Number(r.count)||0);
 customs=r2.data||[];
 hidden=new Set((r4.data||[]).map(r=>r.code));
@@ -243,10 +242,14 @@ const prev=await sb.from("tally_headers").select("stod,name,kt").eq("user_id",us
 if(v!==loadVersion)return;
 if(prev.data){$("fStod").value=prev.data.stod||"";$("fName").value=prev.data.name||"";$("fKt").value=prev.data.kt||"";}
 }
+try{
+const r5=await sb.from("tally_section3").select("field,value").eq("user_id",user.id).eq("period",pm);
+if(r5.error)throw r5.error;
 const s3={};(r5.data||[]).forEach(r=>s3[r.field]=r.value||"");S3_EDIT.forEach(id=>{if(s3[id]!=null)$(id).value=s3[id];});
+}catch(eS3){console.warn(eS3.message);status(`${pm} hlaðinn ✓ - Section III þarf SQL-fix (field dálkur vantar)`,true);loading=false;render();return;}
 status(`${pm} hlaðinn ✓`,false);
 }catch(e){if(v===loadVersion)status("Hleðsla mistókst: "+e.message,true);}
-finally{if(v===loadVersion){loading=false;render();}}
+finally{if(loadVersion===v){loading=false;render();}}
 }
 S3_EDIT.forEach(id=>{$(id).addEventListener("input",s3live);});
 $("showPass").onchange=()=>{$("pass").type=$("showPass").checked?"text":"password";};
