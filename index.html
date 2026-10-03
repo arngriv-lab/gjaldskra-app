@@ -25,10 +25,13 @@ details.card[open] summary{border-bottom:2px solid #999;border-radius:10px 10px 
 label{display:block;font-size:13px;font-weight:700}
 label input,.auth input{display:block;width:100%;padding:10px;border:1px solid #999;border-radius:6px;margin:4px 0 8px;font-size:15px}
 label input{background:#d9d9d9}.auth input{background:#fff}
+.showpass{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin:0 0 8px}
+.showpass input{width:auto;margin:0}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}.actions button{padding:11px;border:1px solid #111;border-radius:8px;background:#fff;font-weight:700}
 .actions button.dark{background:#111;color:#fff}.actions button.green{background:#0a7a3f;color:#fff;border-color:#0a7a3f}
 .actions button[aria-pressed="true"]{background:#111;color:#fff}
 #status{font-size:13px;font-weight:700;margin:6px 0}
+#status.err{color:#c00000}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:820px){.grid{grid-template-columns:1fr}}
 details.sec{background:#fff;border:2px solid #999;border-radius:10px;margin-bottom:10px;overflow:hidden}
@@ -63,6 +66,7 @@ details.sec summary{padding:10px;background:#bfbfbf;font-weight:800;cursor:point
 <div class="auth">
 <div id="authStatus">Ekki innskráð/ur</div>
 <input id="email" type="email" placeholder="Netfang"><input id="pass" type="password" placeholder="Lykilorð">
+<label class="showpass"><input id="showPass" type="checkbox"> Sýna lykilorð</label>
 <div class="actions"><button id="btnIn" class="dark" type="button">Skrá inn</button><button id="btnUp" type="button">Nýskrá</button><button id="btnOut" type="button">Skrá út</button></div>
 </div>
 <div id="app" hidden>
@@ -80,7 +84,6 @@ details.sec summary{padding:10px;background:#bfbfbf;font-weight:800;cursor:point
 </div>
 <div class="actions">
 <button id="saveHead" class="dark" type="button">Vista upplýsingar</button>
-<button id="copyLast" type="button">Sækja frá fyrri mánuði</button>
 <button id="rst" type="button">Núllstilla mánuð</button>
 <button id="dl" class="green" type="button">Sækja útfyllt Excel</button>
 </div>
@@ -148,7 +151,8 @@ const sb=window.supabase.createClient(SUPA_URL,SUPA_ANON);
 let user=null,counts={},customs=[],tplBytes=null,hidden=new Set(),showHidden=false,loading=false,busy=false,loadVersion=0;
 $("period").value=new Date().toLocaleDateString("sv-SE",{timeZone:"Atlantic/Reykjavik"}).slice(0,7);
 function month(){return $("period").value;}
-function status(m){$("status").textContent=m;}
+function status(m,isErr){const el=$("status");el.textContent=m;el.classList.toggle("err",!!isErr);}
+function showHeadError(m){const d=$("tplCard");if(d)d.open=true;status(m,true);setTimeout(()=>{const el=$("status");if(el&&el.scrollIntoView)el.scrollIntoView({behavior:"smooth",block:"center"});},0);}
 function norm(v){if(v==null)return "";if(typeof v==="object"){if(v.text!=null)return String(v.text).trim();if(v.richText)return v.richText.map(x=>x.text).join("").trim();return "";}return String(v).trim();}
 function fmt(d){if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return null;const[y,m,dd]=d.split("-").map(Number);const c=new Date(Date.UTC(y,m-1,dd));if(c.getUTCFullYear()!==y||c.getUTCMonth()!==m-1||c.getUTCDate()!==dd)return null;return `${String(dd).padStart(2,"0")}.${String(m).padStart(2,"0")}.${y}`;}
 function chosenPeriod(){const a=fmt($("dateFrom").value),b=fmt($("dateTo").value);if(!a||!b)throw new Error("Veldu bæði upphaf og lok tímabils.");if($("dateFrom").value>$("dateTo").value)throw new Error("Lok verða eftir upphaf.");return `${a} - ${b}`;}
@@ -202,14 +206,14 @@ async function setHidden(code,hide){
 if(hide)hidden.add(code);else hidden.delete(code);render();
 localStorage.setItem("gj_hidden_"+(user?user.id:"anon"),JSON.stringify([...hidden]));
 if(!user)return;
-try{if(hide)await sb.from("job_visibility").upsert({user_id:user.id,code,hidden:true},{onConflict:"user_id,code"});else await sb.from("job_visibility").delete().eq("user_id",user.id).eq("code",code);}catch(e){status("Visibility ekki vistað: "+e.message);}
+try{if(hide)await sb.from("job_visibility").upsert({user_id:user.id,code,hidden:true},{onConflict:"user_id,code"});else await sb.from("job_visibility").delete().eq("user_id",user.id).eq("code",code);}catch(e){status("Visibility ekki vistað: "+e.message,true);}
 }
 async function change(code,d){
 if(!user||busy||loading)return;
-if(!navigator.onLine){status("Engin nettenging – ekki vistað.");return;}
-busy=true;render();status("Vista…");
-try{const{data,error}=await sb.rpc("change_tally",{p_period:month(),p_code:code,p_delta:d});if(error)throw error;counts[code]=Number(data);status("Vistað ✓");}
-catch(e){status("Ekki vistað: "+e.message);}
+if(!navigator.onLine){status("Engin nettenging – ekki vistað.",true);return;}
+busy=true;render();status("Vista…",false);
+try{const{data,error}=await sb.rpc("change_tally",{p_period:month(),p_code:code,p_delta:d});if(error)throw error;counts[code]=Number(data);status("Vistað ✓",false);}
+catch(e){status("Ekki vistað: "+e.message,true);}
 busy=false;render();
 }
 async function loadTemplate(){
@@ -218,7 +222,7 @@ try{const{data,error}=await sb.storage.from(BUCKET).download(TPL_PATH);if(error)
 catch(e){$("tplStatus").textContent="Storage error: "+e.message;}
 }
 async function loadMonth(){
-if(!user||busy)return;const v=++loadVersion;const pm=month();loading=true;counts={};customs=[];clearHead();render();status(`Sæki ${pm}…`);
+if(!user||busy)return;const v=++loadVersion;const pm=month();loading=true;counts={};customs=[];clearHead();render();status(`Sæki ${pm}…`,false);
 try{
 const[r1,r2,r3,r4,r5]=await Promise.all([
 sb.from("tally_counts").select("code,count").eq("user_id",user.id).eq("period",pm),
@@ -234,45 +238,50 @@ customs=r2.data||[];
 hidden=new Set((r4.data||[]).map(r=>r.code));
 localStorage.setItem("gj_hidden_"+user.id,JSON.stringify([...hidden]));
 if(r3.data){$("fStod").value=r3.data.stod||"";$("fName").value=r3.data.name||"";$("fKt").value=r3.data.kt||"";readSavedPeriod(r3.data.per);}
+if(!$("fStod").value&&!$("fName").value&&!$("fKt").value){
+const prev=await sb.from("tally_headers").select("stod,name,kt").eq("user_id",user.id).lt("period",pm).order("period",{ascending:false}).limit(1).maybeSingle();
+if(v!==loadVersion)return;
+if(prev.data){$("fStod").value=prev.data.stod||"";$("fName").value=prev.data.name||"";$("fKt").value=prev.data.kt||"";}
+}
 const s3={};(r5.data||[]).forEach(r=>s3[r.field]=r.value||"");S3_EDIT.forEach(id=>{if(s3[id]!=null)$(id).value=s3[id];});
-status(`${pm} hlaðinn ✓`);
-}catch(e){if(v===loadVersion)status("Hleðsla mistókst: "+e.message);}
+status(`${pm} hlaðinn ✓`,false);
+}catch(e){if(v===loadVersion)status("Hleðsla mistókst: "+e.message,true);}
 finally{if(v===loadVersion){loading=false;render();}}
 }
 S3_EDIT.forEach(id=>{$(id).addEventListener("input",s3live);});
+$("showPass").onchange=()=>{$("pass").type=$("showPass").checked?"text":"password";};
 $("q").oninput=render;$("period").onchange=()=>{if(!busy)loadMonth();};
-$("toggleHidden").onclick=()=>{showHidden=!showHidden;render();status(showHidden?"Breytingahamur: hakaðu af til að fela raðir.":"Talningarhamur: gátreitir faldir.");};
+$("toggleHidden").onclick=()=>{showHidden=!showHidden;render();status(showHidden?"Breytingahamur: hakaðu af til að fela raðir.":"Talningarhamur: gátreitir faldir.",false);};
 $("saveHead").onclick=async()=>{
-if(!user||busy||loading)return;let range;try{range=chosenPeriod();}catch(e){status(e.message);return;}
+if(!user||busy||loading)return;let range;try{range=chosenPeriod();}catch(e){showHeadError(e.message);return;}
 busy=true;render();
 const{error}=await sb.from("tally_headers").upsert({user_id:user.id,period:month(),stod:$("fStod").value,per:range,name:$("fName").value,kt:$("fKt").value},{onConflict:"user_id,period"});
-status(error?error.message:"Vistað ✓");busy=false;render();
+if(error)showHeadError(error.message);else status("Vistað ✓",false);busy=false;render();
 };
 $("saveS3").onclick=async()=>{
-if(!user||busy||loading)return;busy=true;render();status("Vista Section III…");
-try{const o={};S3_EDIT.forEach(id=>o[id]=$(id).value.trim());const rows=Object.keys(o).map(field=>({user_id:user.id,period:month(),field,value:o[field]||""}));const{error}=await sb.from("tally_section3").upsert(rows,{onConflict:"user_id,period,field"});if(error)throw error;status("Section III vistað ✓");}catch(e){status("Section III ekki vistað: "+e.message);}
+if(!user||busy||loading)return;busy=true;render();status("Vista Section III…",false);
+try{const o={};S3_EDIT.forEach(id=>o[id]=$(id).value.trim());const rows=Object.keys(o).map(field=>({user_id:user.id,period:month(),field,value:o[field]||""}));const{error}=await sb.from("tally_section3").upsert(rows,{onConflict:"user_id,period,field"});if(error)throw error;status("Section III vistað ✓",false);}catch(e){status("Section III ekki vistað: "+e.message,true);}
 busy=false;render();
 };
-$("copyLast").onclick=async()=>{
-if(!user)return;const[y,m]=month().split("-").map(Number);const prev=new Date(Date.UTC(y,m-2,1)).toISOString().slice(0,7);
-const{data,error}=await sb.from("tally_headers").select("*").eq("user_id",user.id).eq("period",prev).maybeSingle();
-if(error){status(error.message);return;}
-if(!data){status("Ekkert fyrir "+prev);return;}
-$("fStod").value=data.stod||"";$("fName").value=data.name||"";$("fKt").value=data.kt||"";
-status("Sótt frá "+prev+" - veldu tímabil og vistaðu.");
-};
-$("rst").onclick=async()=>{if(!user||busy||loading)return;if(!confirm(`Núllstilla ${month()}?`))return;busy=true;render();const{error}=await sb.rpc("reset_tally_month",{p_period:month()});if(!error)counts={};status(error?error.message:"Núllstillt.");busy=false;render();};
+$("rst").onclick=async()=>{
+if(!user||busy||loading)return;if(!confirm(`Núllstilla ${month()}?`))return;busy=true;render();
+const{error}=await sb.rpc("reset_tally_month",{p_period:month()});
+if(!error){
+counts={};S3_EDIT.forEach(id=>{$(id).value="";});
+try{await sb.from("tally_section3").delete().eq("user_id",user.id).eq("period",month());}catch(e){}
+}
+if(error)status(error.message,true);else status("Núllstillt.",false);busy=false;render();};
 $("cAdd").onclick=async()=>{
 if(!user)return;const code=$("cCode").value.trim(),label=$("cLabel").value.trim(),units=Number($("cUnits").value);
-if(!code||!label||!Number.isFinite(units)||units<0){status("Vantar taxta/heiti/ein.");return;}
+if(!code||!label||!Number.isFinite(units)||units<0){status("Vantar taxta/heiti/ein.",true);return;}
 const{error}=await sb.from("job_custom").upsert({user_id:user.id,code,label,units,side:$("cSide").value},{onConflict:"user_id,code"});
-if(error)status(error.message);else loadMonth();
+if(error)status(error.message,true);else loadMonth();
 };
 $("cDel").onclick=async()=>{if(!user)return;const code=$("cCode").value.trim();if(!code)return;await sb.from("job_custom").delete().eq("user_id",user.id).eq("code",code);loadMonth();};
 async function download(){
-if(!user||busy||loading)return;if(!tplBytes){status("Template vantar.");return;}
-let range;try{range=chosenPeriod();}catch(e){status(e.message);return;}
-busy=true;render();status("Útbý Excel…");
+if(!user||busy||loading)return;if(!tplBytes){showHeadError("Template vantar.");return;}
+let range;try{range=chosenPeriod();}catch(e){showHeadError(e.message);return;}
+busy=true;render();status("Útbý Excel…",false);
 try{
 const{data,error}=await sb.from("tally_counts").select("code,count").eq("user_id",user.id).eq("period",month());
 if(error)throw error;const cur={};(data||[]).forEach(r=>cur[r.code]=Number(r.count)||0);counts=cur;render();
@@ -299,13 +308,13 @@ v=tn($("s3_heild").value);if(v!=null)ws.getCell("M44").value=v;
 wb.calcProperties.fullCalcOnLoad=true;
 const buf=await wb.xlsx.writeBuffer();
 const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}));a.download=`gjaldskra-filled-${month()}.xlsx`;document.body.append(a);a.click();a.remove();
-status("Excel sótt - opnaðu í Excel og yfirfarðu.");
-}catch(e){status("Excel mistókst: "+e.message);}
+status("Excel sótt - opnaðu í Excel og yfirfarðu.",false);
+}catch(e){showHeadError("Excel mistókst: "+e.message);}
 busy=false;render();
 }
 $("dl").onclick=$("dlTop").onclick=download;
-$("btnIn").onclick=async()=>{const{error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("pass").value});if(error)status(error.message);};
-$("btnUp").onclick=async()=>{const{error}=await sb.auth.signUp({email:$("email").value.trim(),password:$("pass").value});status(error?error.message:"Nýskráð - skráðu þig inn.");};
+$("btnIn").onclick=async()=>{const{error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("pass").value});if(error)status(error.message,true);};
+$("btnUp").onclick=async()=>{const{error}=await sb.auth.signUp({email:$("email").value.trim(),password:$("pass").value});status(error?error.message:"Nýskráð - skráðu þig inn.",!!error);};
 $("btnOut").onclick=async()=>await sb.auth.signOut();
 sb.auth.onAuthStateChange((_e,s)=>{
 const nu=s?.user||null;if(user?.id===nu?.id)return;user=nu;
